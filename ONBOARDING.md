@@ -16,7 +16,7 @@ Ce guide vous montre comment reproduire **Data Factory** de zéro.
 6. [Modifier pour votre username](#6-modifier-pour-votre-username)
 7. [Lancer l'ingestion](#7-lancer-lingestion)
 8. [Vérifier les données](#8-vérifier-les-données)
-9. [Prochaines étapes](#9-prochaines-étapes)
+
 
 ---
 
