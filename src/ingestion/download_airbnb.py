@@ -2,35 +2,33 @@ import os
 from kaggle.api.kaggle_api_extended import KaggleApi
 from pyspark.sql import SparkSession
 
+spark = SparkSession.builder.appName("ingestion").getOrCreate()
+
 DATASET = "dgomonov/new-york-city-airbnb-open-data"
 
-def download_airbnb():
-    print("Starting Airbnb ingestion from Kaggle...")
+BASE_PATH = os.path.dirname(os.path.abspath(__file__))
+BRONZE_PATH = os.path.normpath(os.path.join(BASE_PATH, "../../data/bronze"))
 
+def download():
     api = KaggleApi()
     api.authenticate()
 
-    bronze_path = "data/bronze/airbnb/raw"
-    os.makedirs(bronze_path, exist_ok=True)
+    os.makedirs(BRONZE_PATH, exist_ok=True)
 
     api.dataset_download_files(
         DATASET,
-        path=bronze_path,
+        path=BRONZE_PATH,
         unzip=True
     )
 
-    print("Data downloaded into Bronze zone")
-    print("Files:", os.listdir(bronze_path))
-
-    return bronze_path
+    print("Files:", os.listdir(BRONZE_PATH))
 
 
-def push_to_s3(local_path):
-    print("Starting Spark upload to S3...")
+def push_to_s3():
+    file_path = os.path.join(BRONZE_PATH, "AB_NYC_2019.csv")
 
-    spark = SparkSession.builder.getOrCreate()
-
-    file_path = os.path.join(local_path, "AB_NYC_2019.csv")
+    if not os.path.exists(file_path):
+        raise Exception(f"File not found: {file_path}")
 
     df = spark.read.csv(file_path, header=True, inferSchema=True)
 
@@ -38,9 +36,9 @@ def push_to_s3(local_path):
         "s3a://amalam/bronze/airbnb/raw/"
     )
 
-    print("Data written to S3 bronze layer")
+    print("Uploaded to S3")
 
 
 if __name__ == "__main__":
-    path = download_airbnb()
-    push_to_s3(path)
+    download()
+    push_to_s3()
