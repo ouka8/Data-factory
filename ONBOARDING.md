@@ -36,11 +36,10 @@ Ce guide vous montre comment reproduire **Data Factory** de zéro.
 2. Cliquer **"Create account"**
 
 
-## Étape 1.3 : Accepter le dataset
+## Étape 1.3 : le dataset
 
 1. Aller sur : https://www.kaggle.com/datasets/dgomonov/new-york-city-airbnb-open-data
-2. Cliquer **"Join"** pour accepter les conditions
-3. Attendre 30 secondes (le dataset sera accessible)
+
 
 **Kaggle est prêt !**
 
@@ -104,14 +103,7 @@ Créer les dossiers dans **Data Storage** → **New Folder**
 2. Cliquer sur **"Create New API Token"**
 3. Copier le token
 
-### Le fichier ressemble à :
 
-```json
-{
-  "username": "monusername",
-  "key": "abcdef123456"
-}
-```
 
 ## Étape 4.2 : Configurer dans Jupyter
 
@@ -132,10 +124,10 @@ Coller :
 
 Puis :
 ```bash
+pip install kaggle
 mv kaggle.json ~/.kaggle/
 chmod 600 ~/.kaggle/kaggle.json
 ls ~/.kaggle
-pip install kaggle
 ```
 
 **Token Kaggle configuré !**
@@ -189,7 +181,7 @@ S3_BRONZE_PATH = "s3a://VOTRE_USERNAME/bronze/airbnb/"
 - **Ctrl+S** (ou Cmd+S sur Mac)
 - Ou **File → Save**
 
-✅ **Fichier modifié et sauvegardé !**
+**Fichier modifié et sauvegardé !**
 
 ---
 
@@ -420,7 +412,3 @@ data-factory/
 - **ONBOARDING.md** : Ce guide (vous le lisez !)
 
 ---
-
-**Vous êtes prêt ! 🚀**
-
-Commencez par l'étape 1 et suivez le guide. Si vous avez des questions, consultez la section **Troubleshooting**.
