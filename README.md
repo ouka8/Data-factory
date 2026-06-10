@@ -1,8 +1,8 @@
-# Infrastructure Data — Onyxia
+# Infrastructure Data - Onyxia
 
-## Projet Data Factory — M2 IMSD
+## Projet Data Factory - M2 IMSD
 
-Auteur : Amal  
+Auteurs : KOURAOGO Emmanuel & PECH Mylane  
 Plateforme : Onyxia  
 Architecture : Medallion (Bronze / Silver / Gold)
 
