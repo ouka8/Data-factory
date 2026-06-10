@@ -3,7 +3,7 @@
 Pipeline de traitement des données Airbnb selon l'architecture **Medallion**
 (Bronze → Silver → Gold) sur la plateforme Onyxia, en **PySpark**.
 
-Auteur : Kouraogo Emmanuel — rôle **Data Engineer** — M2 IMSD.
+Auteur : Kouraogo Emmanuel & Mylane PECH - rôle **Data Engineer** - M2 IMSD.
 
 ---
 
