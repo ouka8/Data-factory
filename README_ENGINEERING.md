@@ -1,4 +1,4 @@
-# Data Factory — Pipeline Data Engineer (Airbnb NYC 2019)
+# Data Factory - Pipeline Data Engineer (Airbnb NYC 2019)
 
 Pipeline de traitement des données Airbnb selon l'architecture **Medallion**
 (Bronze → Silver → Gold) sur la plateforme Onyxia, en **PySpark**.
