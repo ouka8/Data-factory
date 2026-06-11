@@ -77,7 +77,7 @@ Data-factory/
 
 > Lecture Silver · Feature Engineering · KPI Dashboard
 
-### Gold ML — features pour le Data Scientist
+### Gold ML - features pour le Data Scientist
 
 | Feature | Type | Description |
 |---------|------|-------------|
@@ -88,7 +88,7 @@ Data-factory/
 | `price_vs_zone_pct` | Numérique | Écart relatif au prix moyen de zone |
 | `zone_type_avg_price` | Numérique | Prix moyen zone × type de logement |
 
-### Gold Dashboard — KPI pour le Data Analyst
+### Gold Dashboard - KPI pour le Data Analyst
 
 **15 lignes agrégées** (5 zones × 3 types) · Métriques : prix moyen · médian · min · max · disponibilité · reviews
 
@@ -131,7 +131,7 @@ Data-factory/
 ```bash
 cd ~/work/data-factory
 
-# Étape 1 _ Bronze vers Silver
+# Étape 1 - Bronze vers Silver
 python src/engineering/bronze_to_silver.py
 
 # Étape 2 - Silver vers Gold
