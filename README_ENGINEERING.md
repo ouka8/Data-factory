@@ -1,146 +1,160 @@
-# Data Factory - Pipeline Data Engineer (Airbnb NYC 2019)
+# Data Factory — Pipeline Data Engineering (Airbnb NYC 2019)
 
-Pipeline de traitement des données Airbnb selon l'architecture **Medallion**
-(Bronze → Silver → Gold) sur la plateforme Onyxia, en **PySpark**.
+> Architecture Medallion · Bronze → Silver → Gold · PySpark · Onyxia  
+> Master 2 IMSD · Université Paris-Saclay / Évry · 2025-2026
 
-Auteur : Kouraogo Emmanuel & Mylane PECH - rôle **Data Engineer** - M2 IMSD.
+**Auteurs :** Emmanuel KOURAOGO & Mylane PECH — rôle **Data Engineer**
 
 ---
 
-## 1. Rôle du Data Engineer
+## Contexte
 
-Le Data Engineer intervient **après l'Architecte** (qui a ingéré le CSV brut
-en Bronze) et **avant le Data Scientist / Data Analyst** (qui consomment la
-zone Gold). Sa mission : transformer des données brutes en données **propres,
-fiables et documentées**.
+Pipeline de traitement des données **Airbnb New York City 2019** (48 895 listings) selon l'architecture **Medallion** sur la plateforme **Onyxia** (SSP Cloud), entièrement en **PySpark distribué**.
 
 | Zone | Contenu | Responsabilité |
 |------|---------|----------------|
-| Bronze | CSV brut Airbnb (non modifié) | Architecte |
-| Silver | Données nettoyées en Parquet | **Data Engineer** |
-| Gold | Features ML + KPI dashboard | **Data Engineer** |
+| 🥉 Bronze | CSV brut Airbnb (non modifié) | Architecte |
+| 🥈 Silver | Données nettoyées en Parquet | **Data Engineer** |
+| 🥇 Gold | Features ML + KPI dashboard | **Data Engineer** |
 
 ---
 
-## 2. Architecture du pipeline
+## Architecture du pipeline
 
 ```
-Bronze (CSV)                      Silver (Parquet)              Gold (Parquet)
-s3a://USER/bronze/airbnb/   -->   s3a://USER/silver/airbnb/  -->  s3a://USER/gold/ml/
-AB_NYC_2019.csv                   cleaned/                        s3a://USER/gold/dashboard/
-                 [bronze_to_silver.py]            [silver_to_gold.py]
-```
+Bronze (CSV)                       Silver (Parquet)               Gold (Parquet)
+s3a://USER/bronze/airbnb/   ──►   s3a://USER/silver/airbnb/  ──►  s3a://USER/gold/ml/
+AB_NYC_2019.csv                    cleaned/                         s3a://USER/gold/dashboard/
 
----
-
-## 3. Les deux scripts
-
-### `src/engineering/bronze_to_silver.py`
-Lit le CSV Bronze, nettoie, écrit en Parquet partitionné dans Silver et
-génère un rapport qualité.
-
-**Nettoyages appliqués (chacun justifié dans le code) :**
-- **Types corrigés** : les colonnes numériques (price, minimum_nights,
-  latitude…) sont lues en `string` depuis le CSV → converties en `int`/`double`.
-- **Valeurs manquantes** traitées selon leur sens métier :
-  - `reviews_per_month` null (20.56 %) → `0.0` : un null ne signifie pas une
-    donnée manquante mais **« aucune review »** (parfaitement corrélé à
-    `last_review` null). On NE supprime PAS ces 20 % de listings valides.
-  - `last_review` null → `"No review"`.
-  - `name` / `host_name` null (~0.04 %) → `"Unknown"`.
-- **Lignes aberrantes supprimées** (25 lignes au total, 0.05 %) :
-  - prix ≤ 0 (11 lignes) : un logement gratuit n'a pas de sens pour une
-    prédiction de prix.
-  - `minimum_nights` > 365 (14 lignes) : valeurs aberrantes (jusqu'à 1250
-    nuits de minimum).
-- **Déduplication** sur la clé `id` : garantit l'idempotence si la source
-  est ré-ingérée.
-
-**Sortie** : Parquet partitionné par `neighbourhood_group` (5 arrondissements
-= dimension de filtrage la plus fréquente → partition pruning efficace).
-
-### `src/engineering/silver_to_gold.py`
-Lit Silver et produit deux jeux Gold :
-- **`gold/ml/`** : table au grain listing + 6 features pour le Data Scientist
-  (`price_log`, `has_reviews`, `occupancy_rate`, `zone_avg_price`,
-  `price_vs_zone_pct`, `zone_type_avg_price`).
-- **`gold/dashboard/`** : 15 KPI agrégés par arrondissement × type de logement
-  pour le Data Analyst (prix moyen/médian/min/max, disponibilité, reviews).
-
----
-
-## 4. Propriétés garanties
-
-- **100 % PySpark** : aucune opération pandas sur les données volumineuses,
-  tout le traitement est distribué.
-- **Idempotent** : les deux scripts utilisent `mode("overwrite")`. On peut
-  les relancer autant de fois que voulu sans jamais dupliquer les données.
-- **Aucun credential en dur** : le username vient de la variable d'env
-  `S3_USERNAME` (défaut `ekouraogo`) ; l'accès S3 est géré par la session
-  Spark d'Onyxia (variables `AWS_*` injectées par la plateforme).
-- **Gouvernance Medallion** : Silver n'est alimentée que depuis Bronze, Gold
-  uniquement depuis Silver. Aucune écriture croisée.
-
----
-
-## 5. Comment relancer le pipeline de A à Z
-
-### Pré-requis
-- Service **Jupyter PySpark** lancé sur Onyxia.
-- Dossiers S3 créés : `bronze/`, `silver/`, `gold/ml/`, `gold/dashboard/`.
-- CSV brut présent dans Bronze (ingestion de l'Architecte exécutée).
-
-### Étapes (dans un terminal Jupyter)
-```bash
-cd ~/work/data-factory
-
-# 1. Bronze -> Silver (nettoyage + rapport qualité)
-python src/engineering/bronze_to_silver.py
-
-# 2. Silver -> Gold (features ML + KPI dashboard)
-python src/engineering/silver_to_gold.py
-```
-
-> Si votre bucket S3 n'est pas `ekouraogo`, lancez avec :
-> `S3_USERNAME=votre_user python src/engineering/bronze_to_silver.py`
-
-### Vérification
-```bash
-python -c "
-from pyspark.sql import SparkSession
-spark = SparkSession.builder.appName('verif').getOrCreate()
-df = spark.read.parquet('s3a://ekouraogo/silver/airbnb/cleaned/')
-print('Lignes Silver:', df.count())
-df.groupBy('neighbourhood_group').count().show()
-spark.stop()
-"
+                  [bronze_to_silver.py]             [silver_to_gold.py]
 ```
 
 ---
 
-## 6. Résultats obtenus
+## Structure du projet
+
+```
+Data-factory/
+├── src/
+│   └── engineering/
+│       ├── bronze_to_silver.py    # Nettoyage CSV → Parquet partitionné
+│       └── silver_to_gold.py      # Features ML + KPI dashboard
+├── reports/
+│   └── quality_report.json        # Rapport qualité (nulls avant/après)
+└── README_ENGINEERING.md
+```
+
+---
+
+## Scripts
+
+### `bronze_to_silver.py` — Nettoyage & qualité
+
+**Nettoyages appliqués :**
+
+| Opération | Détail | Impact |
+|-----------|--------|--------|
+| Correction des types | `price`, `minimum_nights`, `latitude` → `int`/`double` | Toutes colonnes |
+| Valeurs manquantes | `reviews_per_month` null → `0.0` (aucune review, pas une donnée manquante) | 20.56% |
+| Valeurs manquantes | `last_review` null → `"No review"` | 20.56% |
+| Valeurs manquantes | `name`/`host_name` null → `"Unknown"` | ~0.04% |
+| Suppressions aberrantes | `price ≤ 0` (11 lignes) + `minimum_nights > 365` (14 lignes) | 25 lignes |
+| Déduplication | Sur clé `id` → idempotence garantie | — |
+
+**Sortie :** Parquet partitionné par `neighbourhood_group` (5 partitions → partition pruning efficace)
+
+---
+
+### `silver_to_gold.py` — Feature Engineering & KPIs
+
+**Gold ML** — 6 features pour le Data Scientist :
+
+| Feature | Description |
+|---------|-------------|
+| `price_log` | Log du prix (normalisation distribution) |
+| `has_reviews` | Indicateur binaire d'activité |
+| `occupancy_rate` | Taux d'occupation estimé |
+| `zone_avg_price` | Prix moyen de la zone |
+| `price_vs_zone_pct` | Écart relatif au prix moyen de zone |
+| `zone_type_avg_price` | Prix moyen zone × type de logement |
+
+**Gold Dashboard** — 15 KPI agrégés (5 zones × 3 types) pour le Data Analyst : prix moyen/médian/min/max, disponibilité, reviews.
+
+---
+
+## Résultats
 
 | Métrique | Valeur |
 |----------|--------|
 | Lignes Bronze | 48 895 |
 | Lignes Silver | 48 870 |
-| Lignes retirées | 25 (0.05 %) |
-| Taux de rétention | 99.95 % |
+| Lignes retirées | 25 (0.05%) |
+| Taux de rétention | **99.95%** |
 | Partitions Silver | 5 (Bronx, Brooklyn, Manhattan, Queens, Staten Island) |
-| Table ML (Gold) | 48 870 lignes × 22 colonnes |
-| KPI dashboard (Gold) | 15 lignes (5 zones × 3 types) |
-
-Le rapport qualité détaillé (taux de nulls avant/après par colonne) est
-généré dans `reports/quality_report.json` et sur
-`s3a://ekouraogo/silver/airbnb/_quality_report/`.
+| Table ML Gold | 48 870 lignes × 22 colonnes |
+| KPI Dashboard Gold | 15 lignes (5 zones × 3 types) |
 
 ---
 
-## 7. Note sur la tolérance aux pannes
+## Propriétés garanties
 
-Lors d'un run, un executor Kubernetes peut être *OOMKilled* pendant le
-shuffle (visible dans les logs). Spark **recalcule automatiquement** la
-partition perdue et le job se termine correctement — c'est l'avantage du
-traitement distribué tolérant aux pannes. Pour réduire la pression mémoire,
-on peut ajouter `.config("spark.sql.shuffle.partitions", "8")` (200 partitions
-par défaut est surdimensionné pour ~49 k lignes).
+- **100% PySpark** — aucune opération pandas, tout le traitement est distribué
+- **Idempotent** — `mode("overwrite")` sur chaque script, relançable sans duplication
+- **0 credential en dur** — `S3_USERNAME` via variable d'environnement, accès S3 géré par Onyxia
+- **Gouvernance Medallion** — Silver ← Bronze uniquement, Gold ← Silver uniquement
+
+---
+
+## Lancement du pipeline
+
+### Pré-requis
+- Service **Jupyter PySpark** lancé sur Onyxia (SSP Cloud)
+- Dossiers S3 créés : `bronze/`, `silver/`, `gold/ml/`, `gold/dashboard/`
+- CSV brut présent dans Bronze
+
+### Exécution
+
+```bash
+cd ~/work/data-factory
+
+# 1. Bronze → Silver
+python src/engineering/bronze_to_silver.py
+
+# 2. Silver → Gold
+python src/engineering/silver_to_gold.py
+
+# Avec un bucket S3 différent
+S3_USERNAME=votre_user python src/engineering/bronze_to_silver.py
+```
+
+### Vérification
+
+```python
+from pyspark.sql import SparkSession
+spark = SparkSession.builder.appName("verif").getOrCreate()
+df = spark.read.parquet("s3a://ekouraogo/silver/airbnb/cleaned/")
+print("Lignes Silver:", df.count())
+df.groupBy("neighbourhood_group").count().show()
+spark.stop()
+```
+
+---
+
+## Stack technique
+
+![Python](https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white)
+![PySpark](https://img.shields.io/badge/PySpark-E25A1C?style=flat-square&logo=apachespark&logoColor=white)
+![Onyxia](https://img.shields.io/badge/Onyxia-SSP_Cloud-blue?style=flat-square)
+![S3](https://img.shields.io/badge/S3-MinIO-red?style=flat-square&logo=amazons3&logoColor=white)
+![Medallion](https://img.shields.io/badge/Architecture-Medallion-gold?style=flat-square)
+![Parquet](https://img.shields.io/badge/Format-Parquet-50ABF1?style=flat-square)
+
+---
+
+## Auteurs
+
+**Emmanuel KOURAOGO** & **Mylane PECH** — M2 IMSD · Paris-Saclay
+
+[![GitHub](https://img.shields.io/badge/GitHub-EKOURAOGO-181717?style=flat-square&logo=github)](https://github.com/EKOURAOGO)
+
+*Année universitaire 2025-2026*
