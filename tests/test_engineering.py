@@ -11,8 +11,8 @@ Strategie :
     doublon sur id, types en chaine de caracteres.
 
     Chaque test verifie qu'UNE fonction transforme bien ce DataFrame
-    comme attendu. Aucun acces a S3 : tout tourne en local (master[1]).
-
+    comme attendu. 
+    
 Lancement :
     pip install pytest
     pytest tests/ -v
