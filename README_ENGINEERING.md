@@ -158,7 +158,7 @@ spark.stop()
 
 Tests unitaires des fonctions clés du pipeline de nettoyage, exécutables **en local sans accès à S3 ni à Onyxia** grâce à un DataFrame synthétique en mémoire.
 
-### Couverture — 14 tests
+### Couverture - 14 tests
 
 | Fonction testée | Cas couverts |
 |----------------|-------------|
